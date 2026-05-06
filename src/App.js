@@ -188,37 +188,7 @@ function BlogPost({ post, t, lang }) {
   );
 }
 
-function GalleryPiece({ piece, t }) {
-  const [inquiring, setInquiring] = useState(false);
-  const [sent, setSent] = useState(false);
-  return (
-    <div style={{ background: "#fff", borderRadius: 12, overflow: "hidden", boxShadow: "0 2px 16px rgba(0,0,0,0.07)", transition: "transform 0.2s", cursor: "pointer" }}
-      onMouseEnter={e => e.currentTarget.style.transform = "translateY(-4px)"}
-      onMouseLeave={e => e.currentTarget.style.transform = "translateY(0)"}>
-      <div style={{ height: 200, background: `linear-gradient(135deg, ${piece.color}88, ${piece.color}44)`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 48 }}>
-        🎨
-      </div>
-      <div style={{ padding: "16px 20px 20px" }}>
-        <h3 style={{ fontFamily: "'Playfair Display', Georgia, serif", fontSize: 18, fontWeight: 700, margin: "0 0 6px", color: "#2c2419" }}>{piece.title}</h3>
-        <p style={{ fontSize: 13, color: "#a0998e", lineHeight: 1.6, margin: "0 0 14px" }}>{piece.desc}</p>
-        {!inquiring && !sent && (
-          <button onClick={() => setInquiring(true)} style={{ background: piece.color, color: "#fff", border: "none", borderRadius: 6, padding: "8px 16px", fontSize: 13, fontWeight: 600, cursor: "pointer", width: "100%" }}>
-            {t.gallery.inquire}
-          </button>
-        )}
-        {inquiring && !sent && (
-          <div>
-            <input placeholder="Email" style={{ width: "100%", border: "1px solid #e0d9d0", borderRadius: 6, padding: "8px 12px", fontSize: 13, marginBottom: 8, boxSizing: "border-box" }} />
-            <button onClick={() => { setInquiring(false); setSent(true); }} style={{ background: piece.color, color: "#fff", border: "none", borderRadius: 6, padding: "8px 16px", fontSize: 13, fontWeight: 600, cursor: "pointer", width: "100%" }}>
-              Send →
-            </button>
-          </div>
-        )}
-        {sent && <p style={{ color: "#7ab5c0", fontSize: 13, fontWeight: 600, margin: 0, textAlign: "center" }}>✓ Inquiry sent!</p>}
-      </div>
-    </div>
-  );
-}
+
 
 export default function App() {
   const [lang, setLang] = useState("en");
