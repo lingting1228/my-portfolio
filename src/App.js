@@ -207,7 +207,7 @@ export default function App() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [adminInput, setAdminInput] = useState("");
   const [adminError, setAdminError] = useState(false);
-  const [photoSrc, setPhotoSrc] = useState(null); // kept for compatibility
+  // photo is embedded via public/profile.jpg
   const [activeCategory, setActiveCategory] = useState("All");
   const [sheetPosts, setSheetPosts] = useState([]);
   const [postsLoading, setPostsLoading] = useState(true);
@@ -250,13 +250,7 @@ export default function App() {
     reader.readAsDataURL(file);
   };
 
-  const handlePhotoChange = (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (ev) => setPhotoSrc(ev.target.result);
-    reader.readAsDataURL(file);
-  };
+  // profile photo is served from public/profile.jpg
 
   const addPiece = () => {
     if (!newPiece.title) return;
