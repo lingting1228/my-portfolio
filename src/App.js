@@ -235,7 +235,9 @@ export default function App() {
       .then(text => {
         const json = JSON.parse(text.substring(47).slice(0, -2));
         const rows = json.table.rows;
-        const parsed = rows.map((row, i) => ({
+        const parsed = rows
+          .filter(row => row.c[1]?.v && row.c[1]?.v !== "title")
+          .map((row, i) => ({
           id: row.c[0]?.v || i + 1,
           title: row.c[1]?.v || "",
           desc: row.c[2]?.v || "",
