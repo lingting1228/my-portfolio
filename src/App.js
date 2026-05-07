@@ -195,11 +195,19 @@ export default function App() {
   const [contactSent, setContactSent] = useState(false);
   const [subEmail, setSubEmail] = useState("");
   const [subscribed, setSubscribed] = useState(false);
-  const [uploadedPieces, setUploadedPieces] = useState([]);
+  const [uploadedPieces, setUploadedPieces] = useState(() => {
+    try {
+      const saved = localStorage.getItem("gallery_pieces");
+      return saved ? JSON.parse(saved) : [];
+    } catch { return []; }
+  });
   const [showUpload, setShowUpload] = useState(false);
   const [newPiece, setNewPiece] = useState({ title: "", desc: "", file: null, preview: null });
   const [scrolled, setScrolled] = useState(false);
-  const [photoSrc, setPhotoSrc] = useState(null);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [adminInput, setAdminInput] = useState("");
+  const [adminError, setAdminError] = useState(false);
+  const [photoSrc, setPhotoSrc] = useState(null); // kept for compatibility
   const [activeCategory, setActiveCategory] = useState("All");
   const [sheetPosts, setSheetPosts] = useState([]);
   const [postsLoading, setPostsLoading] = useState(true);
@@ -252,7 +260,10 @@ export default function App() {
 
   const addPiece = () => {
     if (!newPiece.title) return;
-    setUploadedPieces(prev => [...prev, { id: Date.now(), title: newPiece.title, desc: newPiece.desc, preview: newPiece.preview, color: "#c9a98a" }]);
+    const piece = { id: Date.now(), title: newPiece.title, desc: newPiece.desc, preview: newPiece.preview, color: "#c9a98a" };
+    const updated = [...uploadedPieces, piece];
+    setUploadedPieces(updated);
+    try { localStorage.setItem("gallery_pieces", JSON.stringify(updated)); } catch {}
     setNewPiece({ title: "", desc: "", file: null, preview: null });
     setShowUpload(false);
   };
@@ -295,18 +306,9 @@ export default function App() {
         <div>
           {/* Hero */}
           <section style={{ textAlign: "center", padding: "80px 32px 60px", background: "linear-gradient(to bottom, #fff5ec, #faf8f5)", borderBottom: "1px solid #ede8e1" }}>
-            <div style={{ position: "relative", width: 110, height: 110, margin: "0 auto 24px" }}>
-              {photoSrc ? (
-                <img src={photoSrc} alt="profile" style={{ width: 110, height: 110, borderRadius: "50%", objectFit: "cover", boxShadow: "0 4px 24px rgba(201,169,138,0.35)", border: "3px solid #fff" }} />
-              ) : (
-                <div style={{ width: 110, height: 110, borderRadius: "50%", background: "linear-gradient(135deg, #c9a98a, #e8c9a8)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 42, boxShadow: "0 4px 24px rgba(201,169,138,0.3)", border: "3px solid #fff" }}>
-                  👤
-                </div>
-              )}
-              <label title={lang === "zh" ? "上傳照片" : "Upload photo"} style={{ position: "absolute", bottom: 4, right: 4, width: 28, height: 28, borderRadius: "50%", background: "#c9a98a", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", boxShadow: "0 2px 8px rgba(0,0,0,0.15)", fontSize: 13, color: "#fff" }}>
-                ✎
-                <input type="file" accept="image/*" onChange={handlePhotoChange} style={{ display: "none" }} />
-              </label>
+            <div style={{ width: 110, height: 110, margin: "0 auto 24px" }}>
+              <img src="/profile.jpg" alt="Jeng Ling-Ting" style={{ width: 110, height: 110, borderRadius: "50%", objectFit: "cover", objectPosition: "center top", boxShadow: "0 4px 24px rgba(201,169,138,0.35)", border: "3px solid #fff" }} onError={e => { e.target.style.display='none'; e.target.nextSibling.style.display='flex'; }} />
+              <div style={{ width: 110, height: 110, borderRadius: "50%", background: "linear-gradient(135deg, #c9a98a, #e8c9a8)", display: "none", alignItems: "center", justifyContent: "center", fontSize: 42, boxShadow: "0 4px 24px rgba(201,169,138,0.3)", border: "3px solid #fff" }}>👤</div>
             </div>
             <h1 style={{ fontFamily: "'Playfair Display', Georgia, serif", fontSize: 42, fontWeight: 700, margin: "0 0 8px", color: "#2c2419", letterSpacing: "-0.01em" }}>{t.hero.name}</h1>
             <p style={{ fontSize: 17, color: "#c9a98a", fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase", margin: "0 0 32px" }}>{t.hero.tagline}</p>
@@ -494,13 +496,54 @@ export default function App() {
               <h1 style={{ fontFamily: "'Playfair Display', Georgia, serif", fontSize: 36, fontWeight: 700, margin: "0 0 8px", color: "#2c2419" }}>{t.gallery.title}</h1>
               <p style={{ color: "#a0998e", margin: 0, fontSize: 16 }}>{t.gallery.sub}</p>
             </div>
-            <button onClick={() => setShowUpload(!showUpload)} style={{ background: "#c9a98a", color: "#fff", border: "none", borderRadius: 8, padding: "10px 20px", fontSize: 14, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>
-              + {t.gallery.upload}
-            </button>
+            {isAdmin ? (
+              <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+                <span style={{ fontSize: 13, color: "#7ab5c0", fontWeight: 600 }}>✓ {lang === "zh" ? "管理員模式" : "Admin mode"}</span>
+                <button onClick={() => { setIsAdmin(false); setShowUpload(false); }} style={{ background: "none", border: "1px solid #e0d9d0", borderRadius: 8, padding: "8px 14px", fontSize: 13, color: "#a0998e", cursor: "pointer", fontFamily: "inherit" }}>
+                  {lang === "zh" ? "登出" : "Log out"}
+                </button>
+                <button onClick={() => setShowUpload(!showUpload)} style={{ background: "#c9a98a", color: "#fff", border: "none", borderRadius: 8, padding: "10px 20px", fontSize: 14, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>
+                  + {t.gallery.upload}
+                </button>
+              </div>
+            ) : (
+              <button onClick={() => setShowUpload(s => !s)} style={{ background: "none", border: "1px solid #e0d9d0", borderRadius: 8, padding: "8px 16px", fontSize: 13, color: "#a0998e", cursor: "pointer", fontFamily: "inherit" }}>
+                {lang === "zh" ? "🔒 管理員登入" : "🔒 Admin"}
+              </button>
+            )}
           </div>
 
-          {/* Upload panel */}
-          {showUpload && (
+          {/* Password login panel */}
+          {!isAdmin && showUpload && (
+            <div style={{ background: "#fff", border: "1px solid #ede8e1", borderRadius: 12, padding: "24px 28px", marginTop: 24, marginBottom: 32, maxWidth: 360 }}>
+              <p style={{ fontFamily: "'Playfair Display', Georgia, serif", fontSize: 17, fontWeight: 700, margin: "0 0 16px", color: "#2c2419" }}>
+                {lang === "zh" ? "請輸入管理員密碼" : "Enter admin password"}
+              </p>
+              <input
+                type="password"
+                value={adminInput}
+                onChange={e => { setAdminInput(e.target.value); setAdminError(false); }}
+                onKeyDown={e => {
+                  if (e.key === "Enter") {
+                    if (adminInput === "Paint231564") { setIsAdmin(true); setShowUpload(true); setAdminInput(""); }
+                    else setAdminError(true);
+                  }
+                }}
+                placeholder={lang === "zh" ? "密碼" : "Password"}
+                style={{ ...inputStyle, marginBottom: 8 }}
+              />
+              {adminError && <p style={{ color: "#e07a7a", fontSize: 13, margin: "0 0 10px" }}>❌ {lang === "zh" ? "密碼錯誤" : "Incorrect password"}</p>}
+              <button onClick={() => {
+                if (adminInput === "Paint231564") { setIsAdmin(true); setShowUpload(true); setAdminInput(""); }
+                else setAdminError(true);
+              }} style={{ background: "#c9a98a", color: "#fff", border: "none", borderRadius: 8, padding: "10px 24px", fontSize: 14, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>
+                {lang === "zh" ? "登入" : "Login"}
+              </button>
+            </div>
+          )}
+
+          {/* Upload panel — only shown when admin */}
+          {isAdmin && showUpload && (
             <div style={{ background: "#fff", border: "1px solid #ede8e1", borderRadius: 12, padding: "24px 28px", marginTop: 24, marginBottom: 32 }}>
               <label style={{ display: "block", background: "#faf8f5", border: "2px dashed #e0d9d0", borderRadius: 10, padding: "32px", textAlign: "center", cursor: "pointer", marginBottom: 16, color: "#a0998e", fontSize: 14 }}>
                 {newPiece.preview ? <img src={newPiece.preview} alt="preview" style={{ maxHeight: 160, maxWidth: "100%", borderRadius: 8, objectFit: "cover" }} /> : t.gallery.uploadLabel}
