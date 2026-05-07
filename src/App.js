@@ -185,14 +185,7 @@ export default function App() {
   const [contactSent, setContactSent] = useState(false);
   const [subEmail, setSubEmail] = useState("");
   const [subscribed, setSubscribed] = useState(false);
-  const [uploadedPieces, setUploadedPieces] = useState(() => {
-    try {
-      const saved = localStorage.getItem("gallery_pieces");
-      return saved ? JSON.parse(saved) : [];
-    } catch { return []; }
-  });
   const [showUpload, setShowUpload] = useState(false);
-  const [newPiece, setNewPiece] = useState({ title: "", desc: "", file: null, preview: null });
   const [scrolled, setScrolled] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [adminInput, setAdminInput] = useState("");
@@ -259,7 +252,7 @@ export default function App() {
 
   // pieces are managed via Google Sheets
 
-  const allPieces = [...sheetGallery, ...uploadedPieces];
+  const allPieces = sheetGallery;
 
   const inputStyle = { width: "100%", border: "1px solid #e0d9d0", borderRadius: 8, padding: "12px 16px", fontSize: 15, fontFamily: "inherit", boxSizing: "border-box", outline: "none", background: "#faf8f5", color: "#2c2419", marginBottom: 12 };
 
