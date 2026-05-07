@@ -255,25 +255,9 @@ export default function App() {
       .finally(() => setGalleryLoading(false));
   }, []);
 
-  const handleFileChange = (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (ev) => setNewPiece(p => ({ ...p, file, preview: ev.target.result }));
-    reader.readAsDataURL(file);
-  };
-
   // profile photo is served from public/profile.jpg
 
-  const addPiece = () => {
-    if (!newPiece.title) return;
-    const piece = { id: Date.now(), title: newPiece.title, desc: newPiece.desc, preview: newPiece.preview, color: "#c9a98a" };
-    const updated = [...uploadedPieces, piece];
-    setUploadedPieces(updated);
-    try { localStorage.setItem("gallery_pieces", JSON.stringify(updated)); } catch {}
-    setNewPiece({ title: "", desc: "", file: null, preview: null });
-    setShowUpload(false);
-  };
+  // pieces are managed via Google Sheets
 
   const allPieces = [...sheetGallery, ...uploadedPieces];
 
