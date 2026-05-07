@@ -188,7 +188,37 @@ function BlogPost({ post, t, lang }) {
   );
 }
 
-
+function GalleryPiece({ piece, t }) {
+  const [inquiring, setInquiring] = useState(false);
+  const [sent, setSent] = useState(false);
+  return (
+    <div style={{ background: "#fff", borderRadius: 12, overflow: "hidden", boxShadow: "0 2px 16px rgba(0,0,0,0.07)", transition: "transform 0.2s", cursor: "pointer" }}
+      onMouseEnter={e => e.currentTarget.style.transform = "translateY(-4px)"}
+      onMouseLeave={e => e.currentTarget.style.transform = "translateY(0)"}>
+      <div style={{ height: 200, background: `linear-gradient(135deg, ${piece.color}88, ${piece.color}44)`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 48 }}>
+        🎨
+      </div>
+      <div style={{ padding: "16px 20px 20px" }}>
+        <h3 style={{ fontFamily: "'Playfair Display', Georgia, serif", fontSize: 18, fontWeight: 700, margin: "0 0 6px", color: "#2c2419" }}>{piece.title}</h3>
+        <p style={{ fontSize: 13, color: "#a0998e", lineHeight: 1.6, margin: "0 0 14px" }}>{piece.desc}</p>
+        {!inquiring && !sent && (
+          <button onClick={() => setInquiring(true)} style={{ background: piece.color, color: "#fff", border: "none", borderRadius: 6, padding: "8px 16px", fontSize: 13, fontWeight: 600, cursor: "pointer", width: "100%" }}>
+            {t.gallery.inquire}
+          </button>
+        )}
+        {inquiring && !sent && (
+          <div>
+            <input placeholder="Email" style={{ width: "100%", border: "1px solid #e0d9d0", borderRadius: 6, padding: "8px 12px", fontSize: 13, marginBottom: 8, boxSizing: "border-box" }} />
+            <button onClick={() => { setInquiring(false); setSent(true); }} style={{ background: piece.color, color: "#fff", border: "none", borderRadius: 6, padding: "8px 16px", fontSize: 13, fontWeight: 600, cursor: "pointer", width: "100%" }}>
+              Send →
+            </button>
+          </div>
+        )}
+        {sent && <p style={{ color: "#7ab5c0", fontSize: 13, fontWeight: 600, margin: 0, textAlign: "center" }}>✓ Inquiry sent!</p>}
+      </div>
+    </div>
+  );
+}
 
 export default function App() {
   const [lang, setLang] = useState("en");
@@ -203,6 +233,10 @@ export default function App() {
   const [scrolled, setScrolled] = useState(false);
   const [photoSrc, setPhotoSrc] = useState(null);
   const [activeCategory, setActiveCategory] = useState("All");
+  const [sheetPosts, setSheetPosts] = useState([]);
+  const [postsLoading, setPostsLoading] = useState(true);
+
+  const SHEET_ID = "1Z2tnSaVanbbwD9HxfWMO25wCVYgoouvlKzjFSoEkhW8";
 
   const t = translations[lang];
 
@@ -210,6 +244,26 @@ export default function App() {
     const handler = () => setScrolled(window.scrollY > 40);
     window.addEventListener("scroll", handler);
     return () => window.removeEventListener("scroll", handler);
+  }, []);
+
+  useEffect(() => {
+    const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json`;
+    fetch(url)
+      .then(r => r.text())
+      .then(text => {
+        const json = JSON.parse(text.substring(47).slice(0, -2));
+        const rows = json.table.rows;
+        const parsed = rows.map((row, i) => ({
+          id: row.c[0]?.v || i + 1,
+          title: row.c[1]?.v || "",
+          date: row.c[2]?.v || "",
+          tag: row.c[3]?.v || "",
+          excerpt: row.c[4]?.v || "",
+        })).filter(p => p.title);
+        setSheetPosts(parsed);
+      })
+      .catch(() => setSheetPosts([]))
+      .finally(() => setPostsLoading(false));
   }, []);
 
   const handleFileChange = (e) => {
@@ -383,47 +437,66 @@ export default function App() {
           <h1 style={{ fontFamily: "'Playfair Display', Georgia, serif", fontSize: 36, fontWeight: 700, margin: "0 0 6px", color: "#2c2419" }}>{t.blog.title}</h1>
           <p style={{ color: "#a0998e", margin: "0 0 40px", fontSize: 16 }}>{t.blog.sub}</p>
 
-          <div style={{ display: "flex", gap: 48, alignItems: "flex-start" }}>
-            {/* Sidebar */}
-            <aside style={{ width: 180, flexShrink: 0, position: "sticky", top: 80 }}>
-              <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "#b0a898", margin: "0 0 12px", fontFamily: "sans-serif" }}>
-                {lang === "zh" ? "文章分類" : "Categories"}
-              </p>
-              {t.blog.categories.map(cat => {
-                const isAll = cat === t.blog.categories[0];
-                const active = isAll ? activeCategory === "All" || activeCategory === "全部" || activeCategory === cat : activeCategory === cat;
-                return (
-                  <button key={cat} onClick={() => setActiveCategory(isAll ? "All" : cat)}
-                    style={{ display: "block", width: "100%", textAlign: "left", background: active ? "#c9a98a" : "none", color: active ? "#fff" : "#6b6259", border: "none", borderRadius: 7, padding: "8px 14px", fontSize: 14, fontWeight: active ? 600 : 400, cursor: "pointer", fontFamily: "inherit", marginBottom: 4, transition: "all 0.15s" }}>
-                    {cat}
+          {(() => {
+            const allPosts = sheetPosts.length > 0 ? sheetPosts : t.blog.posts;
+            const dynamicTags = [...new Set(allPosts.map(p => p.tag).filter(Boolean))];
+            const filteredPosts = activeCategory === "All" ? allPosts : allPosts.filter(p => p.tag === activeCategory);
+            return (
+              <div style={{ display: "flex", gap: 48, alignItems: "flex-start" }}>
+                {/* Sidebar */}
+                <aside style={{ width: 180, flexShrink: 0, position: "sticky", top: 80 }}>
+                  <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "#b0a898", margin: "0 0 12px", fontFamily: "sans-serif" }}>
+                    {lang === "zh" ? "文章分類" : "Categories"}
+                  </p>
+                  <button onClick={() => setActiveCategory("All")}
+                    style={{ display: "block", width: "100%", textAlign: "left", background: activeCategory === "All" ? "#c9a98a" : "none", color: activeCategory === "All" ? "#fff" : "#6b6259", border: "none", borderRadius: 7, padding: "8px 14px", fontSize: 14, fontWeight: activeCategory === "All" ? 600 : 400, cursor: "pointer", fontFamily: "inherit", marginBottom: 4, transition: "all 0.15s" }}>
+                    {lang === "zh" ? "全部" : "All"}
                   </button>
-                );
-              })}
+                  {dynamicTags.map(cat => (
+                    <button key={cat} onClick={() => setActiveCategory(cat)}
+                      style={{ display: "block", width: "100%", textAlign: "left", background: activeCategory === cat ? "#c9a98a" : "none", color: activeCategory === cat ? "#fff" : "#6b6259", border: "none", borderRadius: 7, padding: "8px 14px", fontSize: 14, fontWeight: activeCategory === cat ? 600 : 400, cursor: "pointer", fontFamily: "inherit", marginBottom: 4, transition: "all 0.15s" }}>
+                      {cat}
+                    </button>
+                  ))}
 
-              {/* Post count badges */}
-              <div style={{ marginTop: 24, borderTop: "1px solid #ede8e1", paddingTop: 20 }}>
-                <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "#b0a898", margin: "0 0 12px", fontFamily: "sans-serif" }}>
-                  {lang === "zh" ? "文章數量" : "Post Count"}
-                </p>
-                {t.blog.categories.slice(1).map(cat => {
-                  const count = t.blog.posts.filter(p => p.tag === cat).length;
-                  return (
-                    <div key={cat} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-                      <span style={{ fontSize: 13, color: "#6b6259" }}>{cat}</span>
-                      <span style={{ fontSize: 12, background: "#f0ece6", color: "#a0998e", borderRadius: 10, padding: "2px 8px", fontFamily: "sans-serif" }}>{count}</span>
+                  {/* Post count */}
+                  <div style={{ marginTop: 24, borderTop: "1px solid #ede8e1", paddingTop: 20 }}>
+                    <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "#b0a898", margin: "0 0 12px", fontFamily: "sans-serif" }}>
+                      {lang === "zh" ? "文章數量" : "Post Count"}
+                    </p>
+                    {dynamicTags.map(cat => (
+                      <div key={cat} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+                        <span style={{ fontSize: 13, color: "#6b6259" }}>{cat}</span>
+                        <span style={{ fontSize: 12, background: "#f0ece6", color: "#a0998e", borderRadius: 10, padding: "2px 8px", fontFamily: "sans-serif" }}>{allPosts.filter(p => p.tag === cat).length}</span>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Sheet link hint */}
+                  <div style={{ marginTop: 24, borderTop: "1px solid #ede8e1", paddingTop: 20 }}>
+                    <p style={{ fontSize: 11, color: "#b0a898", lineHeight: 1.5, margin: 0 }}>
+                      {lang === "zh" ? "✏️ 在 Google Sheets 新增文章後重新整理即可更新" : "✏️ Add posts in Google Sheets and refresh to update"}
+                    </p>
+                  </div>
+                </aside>
+
+                {/* Posts */}
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  {postsLoading ? (
+                    <div style={{ color: "#a0998e", fontSize: 15, padding: "40px 0" }}>
+                      {lang === "zh" ? "載入中..." : "Loading..."}
                     </div>
-                  );
-                })}
+                  ) : filteredPosts.length === 0 ? (
+                    <div style={{ color: "#a0998e", fontSize: 15, padding: "40px 0" }}>
+                      {lang === "zh" ? "目前還沒有文章，請在 Google Sheets 新增！" : "No posts yet. Add them in Google Sheets!"}
+                    </div>
+                  ) : (
+                    filteredPosts.map(post => <BlogPost key={post.id} post={post} t={t} lang={lang} />)
+                  )}
+                </div>
               </div>
-            </aside>
-
-            {/* Posts */}
-            <div style={{ flex: 1, minWidth: 0 }}>
-              {t.blog.posts
-                .filter(p => activeCategory === "All" || activeCategory === "全部" || p.tag === activeCategory)
-                .map(post => <BlogPost key={post.id} post={post} t={t} lang={lang} />)}
-            </div>
-          </div>
+            );
+          })()}
 
           {/* Newsletter — bottom */}
           <div style={{ background: "linear-gradient(135deg, #fff5ec, #faf8f5)", border: "1px solid #ede8e1", borderRadius: 12, padding: "28px 32px", marginTop: 56 }}>
