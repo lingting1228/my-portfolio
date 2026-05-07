@@ -369,7 +369,17 @@ export default function App() {
                   <input value={contactForm.name} onChange={e => setContactForm(f => ({ ...f, name: e.target.value }))} placeholder={t.contact.namePlaceholder} style={inputStyle} />
                   <input value={contactForm.contact} onChange={e => setContactForm(f => ({ ...f, contact: e.target.value }))} placeholder={t.contact.contactPlaceholder} style={inputStyle} />
                   <textarea value={contactForm.need} onChange={e => setContactForm(f => ({ ...f, need: e.target.value }))} placeholder={t.contact.needPlaceholder} rows={4} style={{ ...inputStyle, resize: "vertical", marginBottom: 16 }} />
-                  <button onClick={() => { if (contactForm.name && contactForm.contact) setContactSent(true); }} style={{ background: "#c9a98a", color: "#fff", border: "none", borderRadius: 8, padding: "12px 32px", fontSize: 15, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", letterSpacing: "0.04em", transition: "background 0.2s" }}
+                  <button onClick={async () => {
+                    if (!contactForm.name || !contactForm.contact) return;
+                    try {
+                      await fetch("https://formspree.io/f/xgodzrqw", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ name: contactForm.name, contact: contactForm.contact, message: contactForm.need }),
+                      });
+                    } catch {}
+                    setContactSent(true);
+                  }} style={{ background: "#c9a98a", color: "#fff", border: "none", borderRadius: 8, padding: "12px 32px", fontSize: 15, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", letterSpacing: "0.04em", transition: "background 0.2s" }}
                     onMouseEnter={e => e.currentTarget.style.background = "#b8967a"}
                     onMouseLeave={e => e.currentTarget.style.background = "#c9a98a"}>
                     {t.contact.btn}
@@ -556,7 +566,7 @@ export default function App() {
                 <div style={{ padding: "14px 18px 18px" }}>
                   <h3 style={{ fontFamily: "'Playfair Display', Georgia, serif", fontSize: 17, fontWeight: 700, margin: "0 0 5px", color: "#2c2419" }}>{piece.title}</h3>
                   <p style={{ fontSize: 13, color: "#a0998e", lineHeight: 1.6, margin: "0 0 12px" }}>{piece.desc}</p>
-                  <InquireButton label={t.gallery.inquire} color={piece.color} />
+                  <InquireButton label={t.gallery.inquire} color={piece.color} pieceTitle={piece.title} />
                 </div>
               </div>
             ))}
@@ -574,15 +584,30 @@ export default function App() {
   );
 }
 
-function InquireButton({ label, color }) {
+function InquireButton({ label, color, pieceTitle }) {
   const [sent, setSent] = useState(false);
   const [open, setOpen] = useState(false);
   const [email, setEmail] = useState("");
+  const [name, setName] = useState("");
+
+  const handleSend = async () => {
+    if (!email) return;
+    try {
+      await fetch("https://formspree.io/f/xgodzrqw", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, email, message: `詢問畫作報價：${pieceTitle || ""}` }),
+      });
+    } catch {}
+    setSent(true);
+  };
+
   if (sent) return <p style={{ color: "#7ab5c0", fontSize: 13, fontWeight: 600, margin: 0, textAlign: "center" }}>✓ Sent!</p>;
   if (open) return (
     <div>
+      <input value={name} onChange={e => setName(e.target.value)} placeholder="姓名 Name" style={{ width: "100%", border: "1px solid #e0d9d0", borderRadius: 6, padding: "7px 10px", fontSize: 13, fontFamily: "inherit", outline: "none", marginBottom: 6, boxSizing: "border-box" }} />
       <input value={email} onChange={e => setEmail(e.target.value)} placeholder="Email" style={{ width: "100%", border: "1px solid #e0d9d0", borderRadius: 6, padding: "7px 10px", fontSize: 13, fontFamily: "inherit", outline: "none", marginBottom: 7, boxSizing: "border-box" }} />
-      <button onClick={() => { if (email) setSent(true); }} style={{ background: color, color: "#fff", border: "none", borderRadius: 6, padding: "7px 14px", fontSize: 13, fontWeight: 600, cursor: "pointer", width: "100%" }}>→</button>
+      <button onClick={handleSend} style={{ background: color, color: "#fff", border: "none", borderRadius: 6, padding: "7px 14px", fontSize: 13, fontWeight: 600, cursor: "pointer", width: "100%" }}>送出 →</button>
     </div>
   );
   return <button onClick={() => setOpen(true)} style={{ background: color, color: "#fff", border: "none", borderRadius: 6, padding: "8px 14px", fontSize: 13, fontWeight: 600, cursor: "pointer", width: "100%", fontFamily: "inherit" }}>{label}</button>;
