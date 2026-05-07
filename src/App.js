@@ -69,12 +69,7 @@ const translations = {
       titleLabel: "Title",
       descLabel: "Description",
       addBtn: "Add to Gallery",
-      pieces: [
-        { id: 1, title: "Morning in Jiufen", desc: "Watercolor on paper, 2024. The red lanterns glow softly through the mountain fog.", color: "#c9a98a" },
-        { id: 2, title: "Taroko Marble Light", desc: "Acrylic on canvas, 2024. Blue-green light filtering through the gorge walls.", color: "#7ab5c0" },
-        { id: 3, title: "Taipei Night Market", desc: "Ink & wash, 2023. The chaos and warmth of a rainy night market in Shilin.", color: "#8b7ab5" },
-        { id: 4, title: "Ocean at Yilan", desc: "Oil pastel, 2023. Golden hour along the northeast coast.", color: "#c2955a" },
-      ],
+      pieces: [],
     },
   },
   zh: {
@@ -145,12 +140,7 @@ const translations = {
       titleLabel: "作品名稱",
       descLabel: "作品介紹",
       addBtn: "加入展覽",
-      pieces: [
-        { id: 1, title: "九份晨光", desc: "水彩，2024年。紅燈籠在山間霧氣中輕柔地發光。", color: "#c9a98a" },
-        { id: 2, title: "太魯閣大理石光影", desc: "壓克力，2024年。藍綠色光線穿透峽谷大理石壁。", color: "#7ab5c0" },
-        { id: 3, title: "台北夜市", desc: "墨水淡彩，2023年。雨夜中士林夜市的熱鬧與溫暖。", color: "#8b7ab5" },
-        { id: 4, title: "宜蘭海岸", desc: "油粉彩，2023年。東北角海岸的黃金時刻。", color: "#c2955a" },
-      ],
+      pieces: [],
     },
   },
 };
