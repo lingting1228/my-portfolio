@@ -201,8 +201,11 @@ export default function App() {
   const [activeCategory, setActiveCategory] = useState("All");
   const [sheetPosts, setSheetPosts] = useState([]);
   const [postsLoading, setPostsLoading] = useState(true);
+  const [sheetGallery, setSheetGallery] = useState([]);
+  const [galleryLoading, setGalleryLoading] = useState(true);
 
   const SHEET_ID = "1Z2tnSaVanbbwD9HxfWMO25wCVYgoouvlKzjFSoEkhW8";
+  const GALLERY_SHEET_ID = "1G5ZsF6_HnhLr_9Xk6FtxF2J5pNFvqczZVwEBrA9Wta8";
 
   const t = translations[lang];
 
@@ -232,6 +235,26 @@ export default function App() {
       .finally(() => setPostsLoading(false));
   }, []);
 
+  useEffect(() => {
+    const url = `https://docs.google.com/spreadsheets/d/${GALLERY_SHEET_ID}/gviz/tq?tqx=out:json`;
+    fetch(url)
+      .then(r => r.text())
+      .then(text => {
+        const json = JSON.parse(text.substring(47).slice(0, -2));
+        const rows = json.table.rows;
+        const parsed = rows.map((row, i) => ({
+          id: row.c[0]?.v || i + 1,
+          title: row.c[1]?.v || "",
+          desc: row.c[2]?.v || "",
+          imageUrl: row.c[3]?.v || "",
+          color: "#c9a98a",
+        })).filter(p => p.title);
+        setSheetGallery(parsed);
+      })
+      .catch(() => setSheetGallery([]))
+      .finally(() => setGalleryLoading(false));
+  }, []);
+
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -252,7 +275,7 @@ export default function App() {
     setShowUpload(false);
   };
 
-  const allPieces = [...t.gallery.pieces, ...uploadedPieces];
+  const allPieces = [...sheetGallery, ...uploadedPieces];
 
   const inputStyle = { width: "100%", border: "1px solid #e0d9d0", borderRadius: 8, padding: "12px 16px", fontSize: 15, fontFamily: "inherit", boxSizing: "border-box", outline: "none", background: "#faf8f5", color: "#2c2419", marginBottom: 12 };
 
@@ -539,26 +562,38 @@ export default function App() {
           {/* Upload panel — only shown when admin */}
           {isAdmin && showUpload && (
             <div style={{ background: "#fff", border: "1px solid #ede8e1", borderRadius: 12, padding: "24px 28px", marginTop: 24, marginBottom: 32 }}>
-              <label style={{ display: "block", background: "#faf8f5", border: "2px dashed #e0d9d0", borderRadius: 10, padding: "32px", textAlign: "center", cursor: "pointer", marginBottom: 16, color: "#a0998e", fontSize: 14 }}>
-                {newPiece.preview ? <img src={newPiece.preview} alt="preview" style={{ maxHeight: 160, maxWidth: "100%", borderRadius: 8, objectFit: "cover" }} /> : t.gallery.uploadLabel}
-                <input type="file" accept="image/*" onChange={handleFileChange} style={{ display: "none" }} />
-              </label>
-              <input value={newPiece.title} onChange={e => setNewPiece(p => ({ ...p, title: e.target.value }))} placeholder={t.gallery.titleLabel} style={{ ...inputStyle, marginBottom: 10 }} />
-              <textarea value={newPiece.desc} onChange={e => setNewPiece(p => ({ ...p, desc: e.target.value }))} placeholder={t.gallery.descLabel} rows={3} style={{ ...inputStyle, resize: "vertical" }} />
-              <button onClick={addPiece} style={{ background: "#c9a98a", color: "#fff", border: "none", borderRadius: 8, padding: "10px 24px", fontSize: 14, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>
-                {t.gallery.addBtn}
-              </button>
+              <p style={{ fontFamily: "'Playfair Display', Georgia, serif", fontSize: 17, fontWeight: 700, margin: "0 0 6px", color: "#2c2419" }}>
+                {lang === "zh" ? "在 Google Sheets 新增畫作" : "Add artwork in Google Sheets"}
+              </p>
+              <p style={{ fontSize: 13, color: "#a0998e", lineHeight: 1.7, margin: "0 0 16px" }}>
+                {lang === "zh"
+                  ? "請到你的 Google Sheets 新增一行，填入 id、title、desc、imageUrl 四個欄位。imageUrl 請使用 Google 雲端硬碟的公開圖片連結。新增後重新整理網頁即可看到新畫作。"
+                  : "Go to your Google Sheets and add a new row with id, title, desc, and imageUrl. For imageUrl, use a public Google Drive image link. Refresh the page after adding."}
+              </p>
+              <a href={`https://docs.google.com/spreadsheets/d/1G5ZsF6_HnhLr_9Xk6FtxF2J5pNFvqczZVwEBrA9Wta8/edit`} target="_blank" rel="noreferrer"
+                style={{ display: "inline-block", background: "#c9a98a", color: "#fff", borderRadius: 8, padding: "10px 20px", fontSize: 14, fontWeight: 600, textDecoration: "none" }}>
+                {lang === "zh" ? "開啟 Google Sheets →" : "Open Google Sheets →"}
+              </a>
+              <p style={{ fontSize: 12, color: "#b0a898", marginTop: 16, lineHeight: 1.6 }}>
+                {lang === "zh"
+                  ? "💡 圖片網址取得方式：上傳圖片到 Google 雲端硬碟 → 右鍵 → 共用 → 知道連結的人都可以檢視 → 複製連結，然後將網址格式改為：https://drive.google.com/uc?id=檔案ID"
+                  : "💡 Get image URL: Upload to Google Drive → Right click → Share → Anyone with link → Copy link, then change URL to: https://drive.google.com/uc?id=FILE_ID"}
+              </p>
             </div>
           )}
 
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 24, marginTop: 32 }}>
-            {allPieces.map(piece => (
+            {galleryLoading ? (
+              <p style={{ color: "#a0998e", fontSize: 15, gridColumn: "1/-1" }}>{lang === "zh" ? "載入中..." : "Loading..."}</p>
+            ) : allPieces.length === 0 ? (
+              <p style={{ color: "#a0998e", fontSize: 15, gridColumn: "1/-1" }}>{lang === "zh" ? "目前還沒有畫作，請登入後新增！" : "No artwork yet. Log in to add pieces!"}</p>
+            ) : allPieces.map(piece => (
               <div key={piece.id} style={{ background: "#fff", borderRadius: 12, overflow: "hidden", boxShadow: "0 2px 16px rgba(0,0,0,0.07)", transition: "transform 0.2s" }}
                 onMouseEnter={e => e.currentTarget.style.transform = "translateY(-4px)"}
                 onMouseLeave={e => e.currentTarget.style.transform = "translateY(0)"}>
                 <div style={{ height: 180, overflow: "hidden" }}>
-                  {piece.preview ? (
-                    <img src={piece.preview} alt={piece.title} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                  {(piece.imageUrl || piece.preview) ? (
+                    <img src={piece.imageUrl || piece.preview} alt={piece.title} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                   ) : (
                     <div style={{ height: "100%", background: `linear-gradient(135deg, ${piece.color}88, ${piece.color}33)`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 44 }}>🎨</div>
                   )}
