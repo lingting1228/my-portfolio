@@ -169,6 +169,14 @@ function Tag({ text, color = "#c9a98a" }) {
 function BlogPost({ post, t, lang }) {
   const [expanded, setExpanded] = useState(false);
   const tagColors = { Language: "#7ab5c0", Travel: "#c9a98a", Life: "#8b7ab5", 語言: "#7ab5c0", 旅行: "#c9a98a", 生活: "#8b7ab5" };
+
+  const renderText = (text) => {
+    if (!text) return null;
+    return text.split(/\n\n|\n/).map((para, i) =>
+      para.trim() ? <p key={i} style={{ color: "#6b6259", lineHeight: 1.85, margin: "0 0 16px", fontSize: 15 }}>{para}</p> : null
+    );
+  };
+
   return (
     <div style={{ borderBottom: "1px solid #e8e4de", paddingBottom: 28, marginBottom: 28 }}>
       <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
@@ -176,16 +184,20 @@ function BlogPost({ post, t, lang }) {
         <span style={{ fontSize: 13, color: "#a0998e" }}>{post.date}</span>
       </div>
       <h3 style={{ fontFamily: "'Playfair Display', Georgia, serif", fontSize: 22, fontWeight: 700, margin: "0 0 10px", color: "#2c2419", lineHeight: 1.3 }}>{post.title}</h3>
-      <p style={{ color: "#6b6259", lineHeight: 1.75, margin: "0 0 12px", fontSize: 15 }}>{post.excerpt}</p>
-      {!expanded && (
-        <button onClick={() => setExpanded(true)} style={{ background: "none", border: "none", color: "#c9a98a", cursor: "pointer", fontSize: 14, fontWeight: 600, padding: 0, letterSpacing: "0.04em" }}>
-          {t.blog.readMore} →
-        </button>
-      )}
-      {expanded && (
-        <p style={{ color: "#6b6259", lineHeight: 1.75, fontSize: 15, fontStyle: "italic", borderLeft: "3px solid #c9a98a", paddingLeft: 16, marginTop: 12 }}>
-          {lang === "zh" ? "（此處可貼上完整文章內容）" : "(Full article content can be pasted here)"}
-        </p>
+      {!expanded ? (
+        <>
+          <p style={{ color: "#6b6259", lineHeight: 1.85, margin: "0 0 12px", fontSize: 15 }}>{post.excerpt}</p>
+          <button onClick={() => setExpanded(true)} style={{ background: "none", border: "none", color: "#c9a98a", cursor: "pointer", fontSize: 14, fontWeight: 600, padding: 0, letterSpacing: "0.04em" }}>
+            {t.blog.readMore} →
+          </button>
+        </>
+      ) : (
+        <>
+          {renderText(post.excerpt)}
+          <button onClick={() => setExpanded(false)} style={{ background: "none", border: "none", color: "#c9a98a", cursor: "pointer", fontSize: 14, fontWeight: 600, padding: 0, letterSpacing: "0.04em" }}>
+            ↑ {lang === "zh" ? "收起" : "Collapse"}
+          </button>
+        </>
       )}
     </div>
   );
@@ -231,13 +243,22 @@ export default function App() {
       .then(text => {
         const json = JSON.parse(text.substring(47).slice(0, -2));
         const rows = json.table.rows;
-        const parsed = rows.map((row, i) => ({
-          id: row.c[0]?.v || i + 1,
-          title: row.c[1]?.v || "",
-          date: row.c[2]?.v || "",
-          tag: row.c[3]?.v || "",
-          excerpt: row.c[4]?.v || "",
-        })).filter(p => p.title);
+        const parsed = rows.map((row, i) => {
+          // Handle Google Sheets date format: Date(year,month,day) where month is 0-indexed
+          let dateStr = row.c[2]?.v || "";
+          if (typeof dateStr === "string" && dateStr.startsWith("Date(")) {
+            const parts = dateStr.replace("Date(","").replace(")","").split(",");
+            const y = parts[0], m = String(Number(parts[1]) + 1).padStart(2,"0"), d = String(parts[2]).padStart(2,"0");
+            dateStr = `${y}/${m}/${d}`;
+          }
+          return {
+            id: row.c[0]?.v || i + 1,
+            title: row.c[1]?.v || "",
+            date: dateStr,
+            tag: row.c[3]?.v || "",
+            excerpt: row.c[4]?.v || "",
+          };
+        }).filter(p => p.title);
         setSheetPosts(parsed);
       })
       .catch(() => setSheetPosts([]))
@@ -598,7 +619,11 @@ export default function App() {
                 </div>
                 <div style={{ padding: "14px 18px 18px" }}>
                   <h3 style={{ fontFamily: "'Playfair Display', Georgia, serif", fontSize: 17, fontWeight: 700, margin: "0 0 5px", color: "#2c2419" }}>{piece.title}</h3>
-                  <p style={{ fontSize: 13, color: "#a0998e", lineHeight: 1.6, margin: "0 0 12px" }}>{piece.desc}</p>
+                  <div style={{ fontSize: 13, color: "#a0998e", lineHeight: 1.6, margin: "0 0 12px" }}>
+                    {piece.desc ? piece.desc.split(/\n\n|\n/).map((para, i) =>
+                      para.trim() ? <p key={i} style={{ margin: "0 0 6px" }}>{para}</p> : null
+                    ) : null}
+                  </div>
                   <InquireButton label={t.gallery.inquire} color={piece.color} pieceTitle={piece.title} />
                 </div>
               </div>
