@@ -186,7 +186,9 @@ function BlogPost({ post, t, lang }) {
       <h3 style={{ fontFamily: "'Playfair Display', Georgia, serif", fontSize: 22, fontWeight: 700, margin: "0 0 10px", color: "#2c2419", lineHeight: 1.3 }}>{post.title}</h3>
       {!expanded ? (
         <>
-          <p style={{ color: "#6b6259", lineHeight: 1.85, margin: "0 0 12px", fontSize: 15 }}>{post.excerpt}</p>
+          <div style={{ overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 5, WebkitBoxOrient: "vertical", color: "#6b6259", lineHeight: 1.85, fontSize: 15, marginBottom: 12 }}>
+            {post.excerpt}
+          </div>
           <button onClick={() => setExpanded(true)} style={{ background: "none", border: "none", color: "#c9a98a", cursor: "pointer", fontSize: 14, fontWeight: 600, padding: 0, letterSpacing: "0.04em" }}>
             {t.blog.readMore} →
           </button>
